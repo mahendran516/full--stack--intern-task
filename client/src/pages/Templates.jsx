@@ -25,9 +25,15 @@ export default function Templates() {
     if (!token) return alert("Please login to favorite");
     try {
       await authAxios.post(`/api/favorites/${templateId}`);
-      setFavorites((prev) => [...prev, templateId]);
+      // refresh favorites from server to ensure persisted state
+      const r = await authAxios.get('/api/favorites')
+      setFavorites(r.data.map((x) => x.template.id))
     } catch (err) {
-      // ignore duplicate errors
+      // if already favorited or other error, still refresh to keep UI consistent
+      try {
+        const r = await authAxios.get('/api/favorites')
+        setFavorites(r.data.map((x) => x.template.id))
+      } catch(_) {}
     }
   };
 

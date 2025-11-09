@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 
 const AuthContext = createContext(null)
@@ -29,15 +29,25 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
-  const authAxios = axios.create({ baseURL: API_BASE })
-  // attach token header dynamically
-  authAxios.interceptors.request.use(cfg => {
-    if (token) cfg.headers = { ...cfg.headers, Authorization: `Token ${token}` }
-    return cfg
-  })
+  // keep a ref so the axios interceptor always reads the latest token
+  const tokenRef = useRef(token)
+  useEffect(()=>{ tokenRef.current = token }, [token])
+
+  // create axios instance once and attach a single interceptor that reads tokenRef
+  const authAxiosRef = useRef(null)
+  if (!authAxiosRef.current) authAxiosRef.current = axios.create({ baseURL: API_BASE })
+  useEffect(() => {
+    const inst = authAxiosRef.current
+    const id = inst.interceptors.request.use(cfg => {
+      const tk = tokenRef.current
+      if (tk) cfg.headers = { ...cfg.headers, Authorization: `Token ${tk}` }
+      return cfg
+    })
+    return () => inst.interceptors.request.eject(id)
+  }, [])
 
   return (
-    <AuthContext.Provider value={{ token, user, login, register, logout, authAxios }}>
+    <AuthContext.Provider value={{ token, user, login, register, logout, authAxios: authAxiosRef.current }}>
       {children}
     </AuthContext.Provider>
   )

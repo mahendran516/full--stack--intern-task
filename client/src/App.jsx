@@ -14,6 +14,7 @@ export default function App() {
             <Link to="/favorites" className="text-blue-600">My Favorites</Link>
             {!token ? <Link to="/login" className="ml-4 text-green-600">Login</Link>
               : <button onClick={logout} className="ml-4 text-red-600">Logout</button>}
+               <Link to="/register" className="text-blue-600">Register</Link>
           </nav>
         </div>
       </header>
